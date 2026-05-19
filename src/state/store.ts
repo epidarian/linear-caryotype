@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { LazyStore } from "@tauri-apps/plugin-store";
 
 import { allocate, redistribute, reflow } from "./budget";
+import * as settingsApi from "../api/settings";
 import {
   ApprovalProposal,
   DEFAULT_SETTINGS,
@@ -17,8 +17,6 @@ import * as history from "../api/history";
 import * as keylog from "../api/keylog";
 import * as windowApi from "../api/window";
 
-const persistStore = new LazyStore("settings.json");
-
 interface State {
   ready: boolean;
   windowState: WindowState;
@@ -29,7 +27,7 @@ interface State {
   currentIndex: number;
   /** Wall-clock ms when the current interval started (running only). */
   intervalStartMs: number | null;
-  /** Settings, persisted via tauri-plugin-store. */
+  /** Effective settings (prefs + config.plist). */
   settings: Settings;
   /** Pending Linear approval proposals. */
   approvals: ApprovalProposal[];
@@ -77,18 +75,12 @@ export const useStore = create<State & Actions>((set, get) => ({
 
   init: async () => {
     try {
-      let saved: Partial<Settings> | undefined;
-      try {
-        saved = (await persistStore.get<Partial<Settings>>("settings")) ?? undefined;
-      } catch {
-        // tauri-plugin-store isn't available in plain-browser dev; ignore.
+      let settings = DEFAULT_SETTINGS;
+      if (settingsApi.isTauri()) {
+        const loaded = await settingsApi.settingsReload();
+        settings = { ...DEFAULT_SETTINGS, ...loaded };
       }
-      set({
-        settings: { ...DEFAULT_SETTINGS, ...(saved ?? {}) },
-        ready: true,
-      });
-      // [stub-data] auto-load the canned ticket set so the UI is populated
-      // without needing user setup.
+      set({ settings, ready: true });
       await get().loadDay();
     } catch (e) {
       set({ ready: true, lastError: String(e) });
@@ -107,11 +99,12 @@ export const useStore = create<State & Actions>((set, get) => ({
   setSettings: async (patch) => {
     const next = { ...get().settings, ...patch };
     set({ settings: next });
-    try {
-      await persistStore.set("settings", next);
-      await persistStore.save();
-    } catch {
-      // No-op in plain-browser dev (no Tauri store available).
+    if (settingsApi.isTauri()) {
+      try {
+        await settingsApi.prefsPatch(patch);
+      } catch (e) {
+        set({ lastError: String(e) });
+      }
     }
   },
 

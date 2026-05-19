@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Linear Caryotype — declarative configuration (config.plist)
+
+  Install path: ~/Library/Application Support/Linear Caryotype/config.plist
+
+  This file stores a *partial* of the resolved settings schema. Only the
+  keys you set here will override defaults. The user's own preferences
+  (prefs.plist) layer on top of this. All durations are milliseconds.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>dailyHoursMaxMs</key>
+    <integer>28800000</integer>
+
+    <key>perTicketMinMs</key>
+    <integer>600000</integer>
+
+    <key>perTicketMaxMs</key>
+    <integer>7200000</integer>
+
+    <key>linearPollIntervalSeconds</key>
+    <integer>300</integer>
+
+    <key>defaultLabel</key>
+    <string>today</string>
+
+    <key>llmProvider</key>
+    <string>openai</string>
+
+    <key>llmModel</key>
+    <string>gpt-4o-mini</string>
+
+    <key>autoSyncOnStart</key>
+    <true/>
+
+    <key>hotkey</key>
+    <string>CommandOrControl+Shift+Space</string>
+</dict>
+</plist>

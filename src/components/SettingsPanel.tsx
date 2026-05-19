@@ -4,7 +4,7 @@ import { useStore } from "../state/store";
 import * as secrets from "../api/secrets";
 import * as keylog from "../api/keylog";
 import type { KeyName } from "../api/secrets";
-import type { KeylogConfig } from "../state/types";
+import { HOUR_MS, MIN_MS, type KeylogConfig } from "../state/types";
 
 interface Props {
   onClose: () => void;
@@ -82,6 +82,13 @@ export function SettingsPanel({ onClose }: Props) {
     }
   };
 
+  const dailyHours = settings.dailyHoursMaxMs / HOUR_MS;
+  const todayHours =
+    settings.todayHoursOverrideMs == null ? "" : settings.todayHoursOverrideMs / HOUR_MS;
+  const minMinutes = settings.perTicketMinMs / MIN_MS;
+  const maxMinutes =
+    settings.perTicketMaxMs == null ? "" : settings.perTicketMaxMs / MIN_MS;
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
@@ -110,73 +117,73 @@ export function SettingsPanel({ onClose }: Props) {
         </section>
 
         <section>
-          <h4>Working window</h4>
+          <h4>Working hours</h4>
           <div className="kv-row">
-            <label>Start</label>
+            <label>Daily (hours)</label>
             <input
-              type="time"
-              value={settings.workingWindow.start}
+              type="number"
+              min={0}
+              step={0.5}
+              value={dailyHours}
               onChange={(e) =>
-                void setSettings({
-                  workingWindow: { ...settings.workingWindow, start: e.target.value },
-                })
+                void setSettings({ dailyHoursMaxMs: Number(e.target.value) * HOUR_MS })
               }
             />
-            <label>End</label>
+            <label>Today override (hours)</label>
             <input
-              type="time"
-              value={settings.workingWindow.end}
+              type="number"
+              min={0}
+              step={0.5}
+              value={todayHours}
+              placeholder="(none)"
               onChange={(e) =>
                 void setSettings({
-                  workingWindow: { ...settings.workingWindow, end: e.target.value },
+                  todayHoursOverrideMs:
+                    e.target.value === "" ? null : Number(e.target.value) * HOUR_MS,
                 })
               }
             />
           </div>
           <div className="kv-row">
-            <label>Lunch start</label>
-            <input
-              type="time"
-              value={settings.workingWindow.lunchStart ?? ""}
-              onChange={(e) =>
-                void setSettings({
-                  workingWindow: {
-                    ...settings.workingWindow,
-                    lunchStart: e.target.value || undefined,
-                  },
-                })
-              }
-            />
-            <label>Lunch end</label>
-            <input
-              type="time"
-              value={settings.workingWindow.lunchEnd ?? ""}
-              onChange={(e) =>
-                void setSettings({
-                  workingWindow: {
-                    ...settings.workingWindow,
-                    lunchEnd: e.target.value || undefined,
-                  },
-                })
-              }
-            />
-          </div>
-          <div className="kv-row">
-            <label>Per-ticket floor (min)</label>
+            <label>Per-ticket min (min)</label>
             <input
               type="number"
               min={1}
-              value={Math.round(settings.perTicketFloorMs / 60000)}
+              value={minMinutes}
               onChange={(e) =>
-                void setSettings({ perTicketFloorMs: Number(e.target.value) * 60000 })
+                void setSettings({ perTicketMinMs: Number(e.target.value) * MIN_MS })
               }
             />
+            <label>Per-ticket max (min)</label>
+            <input
+              type="number"
+              min={0}
+              value={maxMinutes}
+              placeholder="(uncapped)"
+              onChange={(e) =>
+                void setSettings({
+                  perTicketMaxMs:
+                    e.target.value === "" ? null : Number(e.target.value) * MIN_MS,
+                })
+              }
+            />
+          </div>
+          <div className="kv-row">
             <label>Long-press (ms)</label>
             <input
               type="number"
               min={150}
               value={settings.longPressMs}
               onChange={(e) => void setSettings({ longPressMs: Number(e.target.value) })}
+            />
+            <label>Poll interval (sec)</label>
+            <input
+              type="number"
+              min={0}
+              value={settings.linearPollIntervalSeconds}
+              onChange={(e) =>
+                void setSettings({ linearPollIntervalSeconds: Number(e.target.value) })
+              }
             />
           </div>
         </section>
@@ -211,6 +218,12 @@ export function SettingsPanel({ onClose }: Props) {
               placeholder="(optional, e.g. today)"
               onChange={(e) => void setSettings({ defaultLabel: e.target.value || null })}
             />
+            <label>Auto-sync on start</label>
+            <input
+              type="checkbox"
+              checked={settings.autoSyncOnStart}
+              onChange={(e) => void setSettings({ autoSyncOnStart: e.target.checked })}
+            />
           </div>
         </section>
 
@@ -231,7 +244,9 @@ export function SettingsPanel({ onClose }: Props) {
                 <input
                   value={keylogCfg.path ?? ""}
                   placeholder="/var/log/keystroke.log"
-                  onChange={(e) => void saveKeylog({ ...keylogCfg, path: e.target.value || null })}
+                  onChange={(e) =>
+                    void saveKeylog({ ...keylogCfg, path: e.target.value || null })
+                  }
                 />
                 <button onClick={() => void pickPath()}>Browse…</button>
               </div>

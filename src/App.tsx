@@ -3,6 +3,8 @@ import { register, unregisterAll } from "@tauri-apps/plugin-global-shortcut";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { useStore } from "./state/store";
+import { DEFAULT_SETTINGS, type Settings } from "./state/types";
+import { isTauri } from "./api/settings";
 import { Sliver } from "./components/Sliver";
 import { TopEdge } from "./components/TopEdge";
 import { NowBar } from "./components/NowBar";
@@ -15,6 +17,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
   const init = useStore((s) => s.init);
+  const loadDay = useStore((s) => s.loadDay);
   const ready = useStore((s) => s.ready);
   const tick = useStore((s) => s.tick);
   const windowState = useStore((s) => s.windowState);
@@ -63,6 +66,28 @@ export default function App() {
       void unregisterAll();
     };
   }, [ready, settings.hotkey]);
+
+  // Poller + config watcher events from the Rust backend.
+  useEffect(() => {
+    if (!ready || !isTauri()) return;
+    let unlistenTickets: (() => void) | undefined;
+    let unlistenConfig: (() => void) | undefined;
+    void (async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      unlistenTickets = await listen("tickets-updated", () => {
+        void loadDay();
+      });
+      unlistenConfig = await listen<Settings>("config-reloaded", (ev) => {
+        useStore.setState({
+          settings: { ...DEFAULT_SETTINGS, ...ev.payload },
+        });
+      });
+    })();
+    return () => {
+      unlistenTickets?.();
+      unlistenConfig?.();
+    };
+  }, [ready, loadDay]);
 
   // Apply opacity via CSS variable; bump to 1 on hover.
   const liveOpacity = hovering ? 1 : settings.opacity;

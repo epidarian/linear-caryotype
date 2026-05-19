@@ -30,9 +30,9 @@ export interface LinearWorkflowState {
 
 export interface TicketBudget {
   issue: LinearIssue;
-  /** Allocated minutes for today. */
+  /** Allocated ms for today. */
   budgetMs: number;
-  /** Remaining minutes (decreases while active). */
+  /** Remaining ms (decreases while active). */
   remainingMs: number;
   /** Cumulative time spent today. */
   spentMs: number;
@@ -44,14 +44,6 @@ export interface TicketBudget {
   doneCommitted: boolean;
   /** True if user skipped to back of stack today. */
   skippedToBack: boolean;
-}
-
-export interface WorkingWindow {
-  /** HH:MM local. */
-  start: string;
-  end: string;
-  lunchStart?: string;
-  lunchEnd?: string;
 }
 
 export interface ApprovalProposal {
@@ -76,30 +68,44 @@ export interface KeylogConfig {
   discard_unattributed: boolean;
 }
 
+/** Mirror of Rust `AppSettings`. All durations in ms. */
 export interface Settings {
-  workingWindow: WorkingWindow;
+  /** Total working time per day (ms). */
+  dailyHoursMaxMs: number;
+  /** Override the daily budget for today only (ms). null = use daily. */
+  todayHoursOverrideMs: number | null;
+  /** Minimum allocation per ticket (ms). */
+  perTicketMinMs: number;
+  /** Maximum allocation per ticket (ms). null = uncapped. */
+  perTicketMaxMs: number | null;
+
   /** Window opacity 0..1 when mouse is not hovering. */
   opacity: number;
   llmProvider: "openai" | "anthropic";
   llmModel: string;
   defaultLabel: string | null;
-  perTicketFloorMs: number;
   longPressMs: number;
   hotkey: string | null;
+  /** Linear poll interval (seconds). 0 = off. */
+  linearPollIntervalSeconds: number;
+  /** Auto-pull tickets on service start. */
+  autoSyncOnStart: boolean;
 }
 
+export const HOUR_MS = 60 * 60 * 1000;
+export const MIN_MS = 60 * 1000;
+
 export const DEFAULT_SETTINGS: Settings = {
-  workingWindow: {
-    start: "09:00",
-    end: "17:00",
-    lunchStart: "12:30",
-    lunchEnd: "13:00",
-  },
+  dailyHoursMaxMs: 8 * HOUR_MS,
+  todayHoursOverrideMs: null,
+  perTicketMinMs: 10 * MIN_MS,
+  perTicketMaxMs: null,
   opacity: 0.9,
   llmProvider: "openai",
   llmModel: "gpt-4o-mini",
   defaultLabel: null,
-  perTicketFloorMs: 10 * 60 * 1000,
   longPressMs: 400,
   hotkey: "CommandOrControl+Shift+Space",
+  linearPollIntervalSeconds: 300,
+  autoSyncOnStart: true,
 };

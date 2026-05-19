@@ -51,6 +51,45 @@ history. The user steers; the app organizes and accommodates.
   - **Windows**: Microsoft C++ Build Tools and WebView2 runtime.
   - **Linux**: see [Tauri's prerequisites](https://tauri.app/start/prerequisites/).
 
+## macOS service + `lrctserver` CLI
+
+The running app exposes a Unix socket and loads configuration from native plists:
+
+| File | Purpose |
+|------|---------|
+| `~/Library/Application Support/Linear Caryotype/config.plist` | Declarative / IT-managed settings |
+| `~/Library/Preferences/dev.caryotype.linear.plist` | User prefs (UI + `lrctserver` defaults) |
+| `~/Library/Application Support/Linear Caryotype/lrct.sock` | CLI IPC socket |
+
+Install the LaunchAgent (login item):
+
+```bash
+chmod +x scripts/install-launchagent.sh scripts/uninstall-launchagent.sh
+./scripts/install-launchagent.sh
+```
+
+Copy and edit declarative config:
+
+```bash
+mkdir -p ~/Library/Application\ Support/Linear\ Caryotype
+cp installer/config.plist.example ~/Library/Application\ Support/Linear\ Caryotype/config.plist
+```
+
+CLI examples (app must be running):
+
+```bash
+cargo build --release --bin lrctserver
+./src-tauri/target/release/lrctserver sync tickets now
+./src-tauri/target/release/lrctserver sync interval 5m
+./src-tauri/target/release/lrctserver linear login --key "$LINEAR_API_KEY"
+./src-tauri/target/release/lrctserver workhrs daily 8
+./src-tauri/target/release/lrctserver workhrs today 6
+./src-tauri/target/release/lrctserver config show
+./src-tauri/target/release/lrctserver service status
+```
+
+Use `--persist-config` on any write command to store into `config.plist` instead of the prefs plist.
+
 ## Run in development
 
 ```bash
