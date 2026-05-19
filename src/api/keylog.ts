@@ -1,5 +1,12 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { KeylogConfig } from "../state/types";
+import {
+  KEYLOG_CHUNKS,
+  KEYLOG_CONFIG,
+  delay,
+  setKeylogConfig,
+} from "./_stubs";
+
+// [stub-data] Keylog config + chunks live in memory and reset on reload.
 
 export interface KeylogChunk {
   id: number;
@@ -9,31 +16,31 @@ export interface KeylogChunk {
   digest: string;
 }
 
-export function getConfig(): Promise<KeylogConfig> {
-  return invoke<KeylogConfig>("keylog_get_config");
+export async function getConfig(): Promise<KeylogConfig> {
+  return delay(KEYLOG_CONFIG, 0);
 }
 
-export function setConfig(config: KeylogConfig): Promise<void> {
-  return invoke("keylog_set_config", { config });
+export async function setConfig(config: KeylogConfig): Promise<void> {
+  setKeylogConfig(config);
+  return delay(undefined, 0);
 }
 
-export function purge(): Promise<void> {
-  return invoke("keylog_purge");
+export async function purge(): Promise<void> {
+  KEYLOG_CHUNKS.length = 0;
+  return delay(undefined, 0);
 }
 
-export function chunksForTicket(ticketId: string, sinceMs?: number): Promise<KeylogChunk[]> {
-  return invoke<KeylogChunk[]>("keylog_chunks_for_ticket", {
-    ticketId,
-    sinceMs: sinceMs ?? null,
-  });
+export async function chunksForTicket(ticketId: string, sinceMs?: number): Promise<KeylogChunk[]> {
+  let rows = KEYLOG_CHUNKS.filter((c) => c.ticket_id === ticketId);
+  if (sinceMs != null) rows = rows.filter((c) => c.interval_end_ms >= sinceMs);
+  return delay(rows, 0);
 }
 
-export function setActiveTicket(
+export async function setActiveTicket(
   ticketId: string | null,
   intervalStartMs: number | null,
 ): Promise<void> {
-  return invoke("keylog_set_active_ticket", {
-    ticketId,
-    intervalStartMs,
-  });
+  void ticketId;
+  void intervalStartMs;
+  return delay(undefined, 0);
 }

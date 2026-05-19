@@ -1,4 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
+import { cannedLlm, delay } from "./_stubs";
+
+// [stub-data] No network calls; canned responses per template.
 
 export type TemplateKind =
   | "morning_standup"
@@ -22,6 +24,6 @@ export interface LlmResponse {
   text: string;
 }
 
-export function generate(req: LlmRequest): Promise<LlmResponse> {
-  return invoke<LlmResponse>("llm_generate", { req });
+export async function generate(req: LlmRequest): Promise<LlmResponse> {
+  return delay(cannedLlm(req), 200);
 }

@@ -1,22 +1,30 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { LinearIssue, LinearWorkflowState } from "../state/types";
+import { STUB_ISSUES, STUB_WORKFLOW_STATES, delay } from "./_stubs";
+
+// [stub-data] All Linear writes are no-ops; reads return the canned set.
 
 export async function fetchToday(label?: string | null): Promise<LinearIssue[]> {
-  return invoke<LinearIssue[]>("linear_fetch_today", { label: label ?? null });
+  let out = STUB_ISSUES;
+  if (label) out = out.filter((i) => i.labels.includes(label));
+  return delay(out);
 }
 
 export async function fetchIssue(id: string): Promise<LinearIssue> {
-  return invoke<LinearIssue>("linear_fetch_issue", { id });
+  const found = STUB_ISSUES.find((i) => i.id === id) ?? STUB_ISSUES[0];
+  return delay(found);
 }
 
 export async function postComment(issueId: string, body: string): Promise<void> {
-  return invoke("linear_post_comment", { issueId, body });
+  console.info("[stub] linear.postComment", { issueId, body });
+  return delay(undefined);
 }
 
 export async function updateState(issueId: string, stateId: string): Promise<void> {
-  return invoke("linear_update_state", { issueId, stateId });
+  console.info("[stub] linear.updateState", { issueId, stateId });
+  return delay(undefined);
 }
 
 export async function workflowStates(teamKey: string): Promise<LinearWorkflowState[]> {
-  return invoke<LinearWorkflowState[]>("linear_workflow_states", { teamKey });
+  void teamKey;
+  return delay(STUB_WORKFLOW_STATES);
 }

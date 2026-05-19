@@ -1,5 +1,12 @@
 # Linear Caryotype
 
+> **Testing branch (`testing/stub-data`).** The frontend API layer in `src/api/`
+> is replaced with in-memory fixtures (`src/api/_stubs.ts`): five canned
+> tickets, canned LLM responses, in-memory history and keylog. No Linear or
+> LLM keys required. Tauri / Rust calls are stubbed out so plain
+> `npm run dev` in a browser at `http://localhost:1420` is enough to exercise
+> the UI. `npm run tauri:dev` still works for the native window chrome.
+
 An always-on-top macOS panel that turns a Linear backlog into a time-budgeted day,
 with an LLM tray for drafting standups and summaries and an LLM-enhanced session
 history. The user steers; the app organizes and accommodates.

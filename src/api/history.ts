@@ -1,4 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
+import { HISTORY, historyInsert, delay } from "./_stubs";
+
+// [stub-data] In-memory history. Resets on page reload.
 
 export type HistoryEvent =
   | "start"
@@ -31,8 +33,8 @@ export interface LogInput {
   ts_ms?: number | null;
 }
 
-export function log(input: LogInput): Promise<number> {
-  return invoke<number>("history_log", { input });
+export async function log(input: LogInput): Promise<number> {
+  return delay(historyInsert(input), 0);
 }
 
 export interface QueryFilters {
@@ -43,14 +45,25 @@ export interface QueryFilters {
   limit?: number | null;
 }
 
-export function query(filters: QueryFilters = {}): Promise<HistoryRow[]> {
-  return invoke<HistoryRow[]>("history_query", { filters });
+export async function query(filters: QueryFilters = {}): Promise<HistoryRow[]> {
+  let rows = HISTORY.slice();
+  if (filters.since_ms != null) rows = rows.filter((r) => r.ts_ms >= filters.since_ms!);
+  if (filters.until_ms != null) rows = rows.filter((r) => r.ts_ms <= filters.until_ms!);
+  if (filters.ticket_id) rows = rows.filter((r) => r.ticket_id === filters.ticket_id);
+  if (filters.events && filters.events.length > 0) {
+    rows = rows.filter((r) => filters.events!.includes(r.event));
+  }
+  rows.sort((a, b) => a.ts_ms - b.ts_ms);
+  if (filters.limit != null) rows = rows.slice(0, filters.limit);
+  return delay(rows, 0);
 }
 
-export function today(): Promise<HistoryRow[]> {
-  return invoke<HistoryRow[]>("history_today");
+export async function today(): Promise<HistoryRow[]> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return query({ since_ms: start.getTime() });
 }
 
-export function recentForTicket(ticketId: string, limit = 200): Promise<HistoryRow[]> {
-  return invoke<HistoryRow[]>("history_recent_for_ticket", { ticketId, limit });
+export async function recentForTicket(ticketId: string, limit = 200): Promise<HistoryRow[]> {
+  return query({ ticket_id: ticketId, limit });
 }

@@ -77,11 +77,19 @@ export const useStore = create<State & Actions>((set, get) => ({
 
   init: async () => {
     try {
-      const saved = (await persistStore.get<Partial<Settings>>("settings")) ?? {};
+      let saved: Partial<Settings> | undefined;
+      try {
+        saved = (await persistStore.get<Partial<Settings>>("settings")) ?? undefined;
+      } catch {
+        // tauri-plugin-store isn't available in plain-browser dev; ignore.
+      }
       set({
-        settings: { ...DEFAULT_SETTINGS, ...saved },
+        settings: { ...DEFAULT_SETTINGS, ...(saved ?? {}) },
         ready: true,
       });
+      // [stub-data] auto-load the canned ticket set so the UI is populated
+      // without needing user setup.
+      await get().loadDay();
     } catch (e) {
       set({ ready: true, lastError: String(e) });
     }
@@ -102,8 +110,8 @@ export const useStore = create<State & Actions>((set, get) => ({
     try {
       await persistStore.set("settings", next);
       await persistStore.save();
-    } catch (e) {
-      set({ lastError: String(e) });
+    } catch {
+      // No-op in plain-browser dev (no Tauri store available).
     }
   },
 
